@@ -1,0 +1,87 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score, classification_report
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+import os
+
+def load_data(file_path):
+    """Load dataset from CSV or JSON."""
+    if not os.path.exists(file_path):
+        print(f"Error: File not found at {file_path}")
+        return None
+    
+    try:
+        if file_path.endswith(".csv"):
+            data = pd.read_csv(file_path)
+        elif file_path.endswith(".json"):
+            data = pd.read_json(file_path)
+        else:
+            print("Error: Unsupported file format. Only CSV and JSON are supported.")
+            return None
+        return data
+    except Exception as e:
+        print(f"Error loading file: {e}")
+        return None
+
+def preprocess_data(data):
+    """Preprocess the data (handle missing values, scale features)."""
+    print("\n--- Data Preprocessing ---")
+    
+    print("\nMissing values in columns:")
+    print(data.isnull().sum())
+    
+    numeric_cols = data.select_dtypes(include=['number']).columns
+    data[numeric_cols] = data[numeric_cols].fillna(data[numeric_cols].mean())
+    
+    categorical_cols = data.select_dtypes(include=['object']).columns
+    for col in categorical_cols:
+        data[col] = data[col].fillna(data[col].mode()[0])
+    
+    scaler = StandardScaler()
+    data[numeric_cols] = scaler.fit_transform(data[numeric_cols])
+    
+    if 'Sex' in data.columns:
+        le = LabelEncoder()
+        data['Sex'] = le.fit_transform(data['Sex'])
+    
+    data = pd.get_dummies(data, drop_first=True)
+
+    X = data.iloc[:, :-1]  
+    y = data.iloc[:, -1]   
+    
+    return X, y
+
+def apply_svm(X_train, X_test, y_train, y_test):
+    """Train and evaluate the SVM classifier."""
+    svm_model = SVC(kernel='linear')  
+    
+    svm_model.fit(X_train, y_train)
+    
+    y_pred = svm_model.predict(X_test)
+    
+    accuracy = accuracy_score(y_test, y_pred)
+    print("\nModel Accuracy:", accuracy)
+    
+    print("\nClassification Report:")
+    print(classification_report(y_test, y_pred))
+
+def main():
+    """Main function for loading, preprocessing, and applying the SVM model."""
+    file_path = input("Enter the full path for your dataset (CSV/JSON): ").strip()
+    
+    data = load_data(file_path)
+    if data is None:
+        return
+    
+    print("\nDataset Preview:")
+    print(data.head())
+    
+    X, y = preprocess_data(data)
+    
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    
+    apply_svm(X_train, X_test, y_train, y_test)
+
+if __name__ == "__main__":
+    main()
