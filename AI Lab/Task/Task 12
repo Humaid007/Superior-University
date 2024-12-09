@@ -1,0 +1,107 @@
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import BernoulliNB
+from sklearn import metrics
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import classification_report
+df= pd.read_csv('train.csv')
+df.shape
+df.sample(6)
+df.info()
+df.isnull().sum()
+df.describe()
+df.duplicated().sum()
+df.drop(['PassengerId'],axis=1)
+df=df.drop(['Cabin','Name', 'SibSp', 'Parch','Ticket','Cabin','Embarked','PassengerId'],axis=1)
+df['Age'] = df['Age'].fillna(df['Age'].mean())
+df
+df.isnull().sum()
+print(df['Survived'].value_counts())
+sns.countplot(data=df, x='Survived', hue='Pclass')
+sns.countplot(x='Survived', data=df)
+sns.countplot(x='Sex', data=df)
+sns.displot(df[df['Survived']==0]['Age'])
+sns.displot(df[df['Survived']==1]['Age'])
+def changetoint64(col):
+    for i in col:
+        df[i] = df[i].astype('int64')
+        
+columns =[
+    'Age','Fare'
+]
+changetoint64(columns)
+df.info()
+df=df.drop('Fare',axis=1)
+df_encoded = df.copy()
+def encodeCols(cols):
+    for i in cols:
+        data = pd.DataFrame({i:df[i].unique()})
+        data_label_encoder = LabelEncoder()
+        data_label_encoder.fit(np.ravel(data))
+        df_encoded[i] = data_label_encoder.transform(df[i]) 
+columns = ['Survived','Pclass','Sex','Age']
+encodeCols(columns)
+df_encoded.info()
+label_encoder = LabelEncoder()
+df['Sex'] = label_encoder.fit_transform(df['Sex'])
+X = df[['Pclass', 'Sex', 'Age']]
+y = df['Survived']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+X_train.head()
+RF = RandomForestClassifier()
+RF.fit(X_train,y_train)
+Y_pred = RF.predict(X_test)
+r_accuracy = accuracy_score(y_test, Y_pred)
+print('Accuracy: %f' % r_accuracy)
+r_precision = metrics.precision_score(y_test, Y_pred, average='weighted', 
+labels=np.unique(Y_pred))
+print('Precision: %f' % r_precision)
+r_recall = metrics.recall_score(y_test, Y_pred, average='weighted', labels=np.unique(Y_pred))
+print('Recall: %f' % r_recall)
+r_f1 = metrics.f1_score(y_test, Y_pred, average='weighted', labels=np.unique(Y_pred))
+print('F1 score: %f' % r_f1)
+
+GNB = GaussianNB()
+GNB.fit(X_train,y_train)
+Y_pred = GNB.predict(X_test)
+g_accuracy = accuracy_score(y_test, Y_pred)
+print('Accuracy: %f' % g_accuracy)
+g_precision = metrics.precision_score(y_test, Y_pred, average='weighted', 
+labels=np.unique(Y_pred))
+print('Precision: %f' % g_precision)
+g_recall = metrics.recall_score(y_test, Y_pred, average='weighted', labels=np.unique(Y_pred))
+print('Recall: %f' % g_recall)
+g_f1 = metrics.f1_score(y_test, Y_pred, average='weighted', labels=np.unique(Y_pred))
+print('F1 score: %f' % g_f1)
+
+
+DT = DecisionTreeClassifier()
+DT.fit(X_train,y_train)
+Y_pred = DT.predict(X_test)
+d_accuracy = accuracy_score(y_test, Y_pred)
+print('Accuracy: %f' % d_accuracy)
+d_precision = metrics.precision_score(y_test, Y_pred, average='weighted', 
+labels=np.unique(Y_pred))
+print('Precision: %f' % d_precision)
+d_recall = metrics.recall_score(y_test, Y_pred, average='weighted', labels=np.unique(Y_pred))
+print('Recall: %f' % d_recall)
+d_f1 = metrics.f1_score(y_test, Y_pred, average='weighted', labels=np.unique(Y_pred))
+print('F1 score: %f' % d_f1)
+
+
+LR= LogisticRegression()
+LR.fit(X_train,y_train)
+pred_lr= LR.predict(X_test)
+print(X_train.shape)  
+print(X_test.shape)
+LR.score(X_test,y_test)
+print(classification_report(y_test,pred_lr))
+test_data=pd.read_csv('test.csv')
