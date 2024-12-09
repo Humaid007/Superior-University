@@ -1,0 +1,110 @@
+import pandas as pd
+import numpy as np
+import pickle
+
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+df = pd.read_csv(r"C:\Users\SHAFIQ AHMAD\Downloads\data.csv")
+df
+df.head(2)
+df.tail(2)
+print(f"Number of rows {df.shape[0]}, Number of columns {df.shape[1]}")
+print(df.shape)
+print("-- Attributes in Data --")
+for cols in df.columns:
+    print(cols)
+    print("-- Number of instances in Data --")
+print(df.count())
+df['city'].unique()
+print("-- Number of Unique Values in Data --")
+print(df.nunique())
+print("-- Number of Null Values in Data --")
+print(df.isnull().sum())
+print("-- Details of Data --")
+df.describe()
+print("-- Insights of Data --")
+df.info()
+print("-- Number of Null Values in Data --")
+print(df.isnull().sum())
+print(df['street'].isnull().sum())
+def fillNaObjMode(col):
+    for i in col:
+        df[i] = df[i].fillna(df[i].mode()[0])
+
+columns = ['street', 'city', 'statezip', 'country']
+fillNaObjMode(columns)
+def fillNaMean(col):
+    for i in col:
+        df[i] = df[i].fillna(df[i].mean())
+
+columns = ['price','sqft_living','sqft_lot','sqft_above','sqft_basement']
+fillNaMean(columns)
+def fillNaMode(col):
+    for i in col:
+        df[i] = df[i].fillna(df[i].mode()[0])
+
+columns = ['bedrooms','bathrooms','floors','waterfront','view','yr_built']
+fillNaMode(columns)
+df.drop('date', axis=1, inplace=True)
+df.drop('street', axis=1, inplace=True)
+df.head(2)
+print(df.isnull().sum())
+def changetoint64(col):
+    for i in col:
+        df[i] = df[i].astype('int64')
+        
+columns =[
+    'price','bedrooms','bathrooms','sqft_living','sqft_lot',
+    'floors','waterfront','view','sqft_above','sqft_basement',
+    'yr_built']
+changetoint64(columns)
+print("-- Insights of Data --")
+df.info()
+df['city'].unique()
+df['statezip'].unique()
+df['country'].unique()
+df_encoded = df.copy()
+def encodeCols(cols):
+    for i in cols:
+        data = pd.DataFrame({i:df[i].unique()})
+        data_label_encoder = LabelEncoder()
+        data_label_encoder.fit(np.ravel(data))
+        df_encoded[i] = data_label_encoder.transform(df[i]) 
+
+columns = ['city','statezip','country']
+encodeCols(columns)
+df_encoded.info()
+df_encoded.to_csv(r'encoded-data.csv', index = False, header = True)
+traindata, testdata = train_test_split(df_encoded, test_size=0.2, shuffle=False)
+traindata.head(2)
+testdata.head(2)
+train_x = traindata.iloc[:, 1:]
+train_x.head()
+train_y = traindata.iloc[:, 0]
+train_y.head()
+test_x = testdata.iloc[:, 1:]
+test_x.head()
+test_y = testdata.iloc[:, 0]
+test_y.head()
+print("-- Training using SVC on Training Data --")
+print("-- Parameters & Values: ", end='')
+
+model_svc = SVC(gamma='auto', random_state=0)
+model_svc.fit(train_x, np.ravel(train_y))
+
+print(model_svc)
+pickle.dump(model_svc, open('model_svc.pkl', 'wb'))
+model = pickle.load(open('model_svc.pkl', 'rb'))
+model_predictions = model.predict(test_x)
+
+testdata_predict = testdata.copy(deep=True)
+pd.options.mode.chained_assignment = None
+
+testdata_predict['Prediction'] = model_predictions
+print("-- Testing Data with Prediction --")
+model_accuracy_score = accuracy_score(testdata_predict['price'], testdata_predict['Prediction'])
+
+print("-- Model Accuracy Score: ", end='')
+print(round(model_accuracy_score,3))
